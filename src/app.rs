@@ -51,6 +51,7 @@ pub struct TaxApp {
 // Accent color used for the primary action button and selected nav item.
 const ACCENT: egui::Color32 = egui::Color32::from_rgb(116, 161, 46); // green
 
+
 // Formats a money amount with thousands separators and 2 decimal places,
 // e.g. 10000.0 -> "10,000.00". Prefix with "K" at the call site as needed
 // (kept separate so callers can also use this for plain numeric displays).
@@ -83,6 +84,14 @@ fn apply_custom_style(style: &mut egui::Style) {
     style.visuals.widgets.noninteractive.corner_radius = radius;
     style.visuals.widgets.inactive.corner_radius = radius;
     style.visuals.widgets.hovered.corner_radius = radius;
+
+    if style.visuals.dark_mode {
+        style.visuals.extreme_bg_color = egui::Color32::from_rgb(40, 40, 40);
+    }
+    else{
+        style.visuals.extreme_bg_color = egui::Color32::from_rgb(230, 230, 230);
+    }
+
     style.visuals.widgets.active.corner_radius = radius;
 
     // Tint the selection color (used for selected nav item, text selection, etc.)
@@ -257,7 +266,7 @@ impl TaxApp {
 
     fn export_sales(&mut self) {
         let filename = format!(
-            "sales_export_{}.csv",
+            "exports/sales_export_{}.csv",
             chrono::Local::now().format("%Y-%m-%d_%H%M%S")
         );
         match csv_io::export_csv(&filename, &self.sales) {

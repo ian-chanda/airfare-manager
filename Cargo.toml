@@ -9,7 +9,7 @@ num-format = "0.4"
 egui_extras = { version = "0.34", features = ["image"] }
 image = { version = "0.25", features = ["png"] }
 bcrypt = "0.18"
-eframe = "0.34"
+eframe = {version= "0.34", default-features = false, features = ["glow", "default_fonts"]}
 egui = "0.34"
 reqwest = { version = "0.12", features = ["blocking", "json"] }
 serde = { version = "1", features = ["derive"] }
@@ -18,3 +18,6 @@ csv = "1"
 dotenvy = "0.15"
 anyhow = "1"
 chrono = { version = "0.4", features = ["serde"] }
+
+[build-dependencies]
+winres = "0.1.12"
