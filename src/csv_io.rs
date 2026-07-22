@@ -1,5 +1,7 @@
 use anyhow::Result;
 use crate::models::Sale;
+use std::fs;
+use std::path::Path;
 
 // Excel auto-detects "numeric-looking" CSV cells and reformats them as
 // numbers on open — which mangles anything with a leading zero (phone
@@ -16,6 +18,13 @@ fn excel_text(value: &str) -> String {
 }
 
 pub fn export_csv(path: &str, sales: &[Sale]) -> Result<()> {
+
+    //check if le path exists
+    let path = Path::new(path);
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent).unwrap();
+    }
+
     let mut wtr = csv::Writer::from_path(path)?;
     wtr.write_record(&[
         "DATE", "NAME", "AIRLINE", "TICKET NUMBER", "PHONE",
