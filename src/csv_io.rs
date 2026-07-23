@@ -29,7 +29,7 @@ pub fn export_csv(path: &str, sales: &[Sale]) -> Result<()> {
     wtr.write_record(&[
         "DATE", "NAME", "AIRLINE", "TICKET NUMBER", "PHONE",
         "SYSTEM FARE ZMW", "COMMISSION", "FARE AFTER OB ZMW",
-        "COMMISSION ROUTE", "AIRLINE COMMISSION",
+        "AIRLINE COMMISSION %", "AIRLINE COMMISSION",
         "AMOUNT PAID", "BALANCE", "ISSUED BY",
     ])?;
     for s in sales {
@@ -42,7 +42,7 @@ pub fn export_csv(path: &str, sales: &[Sale]) -> Result<()> {
             s.system_fare.to_string(),
             s.commission.to_string(),
             s.fare_after_ob.to_string(),
-            s.commission_route.clone().unwrap_or_default(),
+            s.airline_commission_percent.to_string(),
             s.airline_commission.to_string(),
             s.amount_paid.to_string(),
             s.balance.to_string(),
@@ -58,9 +58,9 @@ pub fn export_csv(path: &str, sales: &[Sale]) -> Result<()> {
 // fields rather than trusting whatever was typed in those columns.
 // Historical May/June data has no PHONE column, so this always imports
 // phone as None — fine, since that data predates the field entirely.
-// Same story for the airline commission route: historical data predates
-// that feature too, so it's always imported as None (0% commission) and
-// can be filled in later via an edit if needed.
+// Same story for airline commission: historical data predates that
+// feature too, so it's always imported as 0% and can be filled in later
+// via an edit if needed.
 pub fn import_csv(path: &str) -> Result<Vec<Sale>> {
     let mut rdr = csv::Reader::from_path(path)?;
     let mut sales = vec![];
@@ -79,7 +79,7 @@ pub fn import_csv(path: &str) -> Result<Vec<Sale>> {
             None, // phone — not present in historical data
             system_fare,
             commission,
-            None, // commission_route — not present in historical data
+            0.0, // airline_commission_percent — not present in historical data
             amount_paid,
             record.get(9).unwrap_or("").to_string(),
         );

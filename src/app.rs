@@ -33,9 +33,8 @@ pub struct TaxApp {
     phone: String,
     system_fare: String,
     commission: String,
-    // Longest-route airline code (e.g. "SA") selected via dropdown — drives
-    // the auto-calculated airline commission. Empty string = none selected.
-    commission_route: String,
+    // Airline commission percentage, typed in directly by staff (e.g. "6" for 6%).
+    commission_percent: String,
     amount_paid: String,
     issued_by: String,
     status: String,
@@ -127,7 +126,7 @@ impl TaxApp {
             phone: String::new(),
             system_fare: String::new(),
             commission: String::new(),
-            commission_route: String::new(),
+            commission_percent: String::new(),
             amount_paid: String::new(),
             issued_by: String::new(),
             status: String::new(),
@@ -209,6 +208,17 @@ impl TaxApp {
                 return;
             }
         };
+        let airline_commission_percent: f64 = if self.commission_percent.trim().is_empty() {
+            0.0
+        } else {
+            match self.commission_percent.parse() {
+                Ok(v) => v,
+                Err(_) => {
+                    self.status = "Airline Commission % must be a number".into();
+                    return;
+                }
+            }
+        };
         let amount_paid: f64 = match self.amount_paid.parse() {
             Ok(v) => v,
             Err(_) => {
@@ -226,11 +236,6 @@ impl TaxApp {
         } else {
             Some(self.phone.clone())
         };
-        let commission_route = if self.commission_route.trim().is_empty() {
-            None
-        } else {
-            Some(self.commission_route.clone())
-        };
 
         let sale = calculator::new_sale(
             date,
@@ -240,7 +245,7 @@ impl TaxApp {
             phone,
             system_fare,
             commission,
-            commission_route,
+            airline_commission_percent,
             amount_paid,
             self.issued_by.clone(),
         );
@@ -255,7 +260,7 @@ impl TaxApp {
                 self.phone.clear();
                 self.system_fare.clear();
                 self.commission.clear();
-                self.commission_route.clear();
+                self.commission_percent.clear();
                 self.amount_paid.clear();
                 self.issued_by.clear();
                 self.refresh_sales(); // keep All Sales / Summary in sync after a save
@@ -325,32 +330,8 @@ impl TaxApp {
                         ui.text_edit_singleline(&mut self.commission);
                         ui.end_row();
 
-                        ui.label("Airline Commission Route:");
-                        egui::ComboBox::from_id_salt("commission_route_combo")
-                            .selected_text(if self.commission_route.is_empty() {
-                                "— None —".to_string()
-                            } else {
-                                let name = calculator::AIRLINE_COMMISSIONS
-                                    .iter()
-                                    .find(|(c, _, _)| *c == self.commission_route)
-                                    .map(|(_, n, _)| *n)
-                                    .unwrap_or("Unknown");
-                                format!("{} - {}", self.commission_route, name)
-                            })
-                            .show_ui(ui, |ui| {
-                                ui.selectable_value(
-                                    &mut self.commission_route,
-                                    String::new(),
-                                    "— None —",
-                                );
-                                for (code, name, pct) in calculator::AIRLINE_COMMISSIONS {
-                                    ui.selectable_value(
-                                        &mut self.commission_route,
-                                        code.to_string(),
-                                        format!("{} - {} ({}%)", code, name, pct),
-                                    );
-                                }
-                            });
+                        ui.label("Airline Commission %:");
+                        ui.text_edit_singleline(&mut self.commission_percent);
                         ui.end_row();
 
                         ui.label("Amount Paid:");
@@ -373,12 +354,21 @@ impl TaxApp {
                     let fare_after_ob = sf + c;
                     ui.label(format!("Fare After OB (auto): K{}", fmt_money(fare_after_ob)));
 
-                    let pct = calculator::airline_commission_percent(&self.commission_route);
-                    let airline_commission = sf * pct / 100.0;
-                    ui.label(format!(
-                        "Airline Commission (auto): K{}",
-                        fmt_money(airline_commission)
-                    ));
+                    // Blank is treated as 0% for the preview; an invalid
+                    // (non-numeric) entry just skips the preview line rather
+                    // than guessing — save_sale() will catch it properly.
+                    let pct = if self.commission_percent.trim().is_empty() {
+                        Some(0.0)
+                    } else {
+                        self.commission_percent.parse::<f64>().ok()
+                    };
+                    if let Some(pct) = pct {
+                        let airline_commission = sf * pct / 100.0;
+                        ui.label(format!(
+                            "Airline Commission (auto): K{}",
+                            fmt_money(airline_commission)
+                        ));
+                    }
 
                     if let Ok(paid) = self.amount_paid.parse::<f64>() {
                         ui.label(format!(
@@ -465,7 +455,7 @@ impl TaxApp {
                     .column(Column::initial(100.0).resizable(true)) // system_fare
                     .column(Column::initial(100.0).resizable(true)) // commission
                     .column(Column::initial(110.0).resizable(true)) // fare_after_ob
-                    .column(Column::initial(70.0).resizable(true)) // commission_route
+                    .column(Column::initial(70.0).resizable(true)) // airline_commission_percent
                     .column(Column::initial(110.0).resizable(true)) // airline_commission
                     .column(Column::initial(90.0).resizable(true)) // amount_paid (editable)
                     .column(Column::initial(90.0).resizable(true)) // balance
@@ -493,7 +483,7 @@ impl TaxApp {
                             ui.strong("Fare After OB");
                         });
                         header.col(|ui| {
-                            ui.strong("Route");
+                            ui.strong("Comm. %");
                         });
                         header.col(|ui| {
                             ui.strong("Airline Comm.");
@@ -533,7 +523,7 @@ impl TaxApp {
                                 ui.label(format!("K{}", fmt_money(sale.fare_after_ob)));
                             });
                             row.col(|ui| {
-                                ui.label(sale.commission_route.as_deref().unwrap_or("—"));
+                                ui.label(format!("{:.2}%", sale.airline_commission_percent));
                             });
                             row.col(|ui| {
                                 ui.label(format!("K{}", fmt_money(sale.airline_commission)));
