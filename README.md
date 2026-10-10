@@ -91,7 +91,13 @@ synthetic test/export data only — they are not real customer records.
 
 ## Screenshots
 
-_Screenshots coming soon._
+<img width="1680" height="1050" alt="Screenshot 2026-10-10 at 6 49 49 pm" src="https://github.com/user-attachments/assets/7b6ca090-23db-4a65-ac3e-5f9af43a6397" />
+<img width="1680" height="1050" alt="Screenshot 2026-10-10 at 6 51 18 pm" src="https://github.com/user-attachments/assets/d779900a-4e4d-4d33-8598-e27b2ba69c2f" />
+<img width="1586" height="992" alt="Palm Travel Sales Dashboard" src="https://github.com/user-attachments/assets/ca874108-0dd8-4918-82fb-7bd1bdb094ae" />
+
+
+
+
 
 ## Limitations
 
