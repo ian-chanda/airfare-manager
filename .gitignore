@@ -1,1 +1,10 @@
 /target
+
+# Local environment / credentials
+.env
+
+# macOS metadata
+.DS_Store
+
+# Generated CSV exports
+/exports/
